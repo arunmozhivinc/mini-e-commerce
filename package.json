@@ -1,0 +1,31 @@
+{
+  "name": "mini-e-commerce",
+  "version": "1.0.0",
+  "description": "Mini E-Commerce / Order Management Platform — Full-Stack MERN with Microservices",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "services/*",
+    "workers/*",
+    "frontend"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "dev": "concurrently --kill-others-on-fail -n gateway,auth,product,order,payment,notification,notif-worker,pay-worker,frontend -c blue,green,yellow,magenta,cyan,white,gray,gray,red \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:product\" \"npm run dev:order\" \"npm run dev:payment\" \"npm run dev:notification\" \"npm run dev:notification-worker\" \"npm run dev:payment-worker\" \"npm run dev:frontend\"",
+    "dev:gateway": "npm -w services/api-gateway run dev",
+    "dev:auth": "npm -w services/auth-service run dev",
+    "dev:product": "npm -w services/product-service run dev",
+    "dev:order": "npm -w services/order-service run dev",
+    "dev:payment": "npm -w services/payment-service run dev",
+    "dev:notification": "npm -w services/notification-service run dev",
+    "dev:notification-worker": "npm -w workers/notification-worker run dev",
+    "dev:payment-worker": "npm -w workers/payment-worker run dev",
+    "dev:frontend": "npm -w frontend run dev",
+    "dev:backend": "concurrently --kill-others-on-fail -n gateway,auth,product,order,payment,notification,notif-worker,pay-worker -c blue,green,yellow,magenta,cyan,white,gray,gray \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:product\" \"npm run dev:order\" \"npm run dev:payment\" \"npm run dev:notification\" \"npm run dev:notification-worker\" \"npm run dev:payment-worker\"",
+    "seed": "node scripts/seed.js",
+    "generate:vapid": "node scripts/generate-vapid-keys.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
