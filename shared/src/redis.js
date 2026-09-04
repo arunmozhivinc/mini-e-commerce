@@ -3,23 +3,50 @@ const logger = require('./logger');
 
 let redisClient = null;
 
+/**
+ * Creates a configured ioredis instance supporting REDIS_URL and TLS (e.g. Upstash)
+ */
+const createRedisClient = (overrides = {}) => {
+  const retryStrategy = (times) => {
+    if (times > 10) {
+      logger.error('Redis: max retries reached, giving up');
+      return null;
+    }
+    const delay = Math.min(times * 200, 5000);
+    logger.warn(`Redis: retrying connection in ${delay}ms (attempt ${times})`);
+    return delay;
+  };
+
+  if (process.env.REDIS_URL) {
+    return new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: null,
+      retryStrategy,
+      ...overrides,
+    });
+  }
+
+  const options = {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    maxRetriesPerRequest: null,
+    retryStrategy,
+    ...overrides,
+  };
+
+  if (process.env.REDIS_PASSWORD) {
+    options.password = process.env.REDIS_PASSWORD;
+  }
+  if (process.env.REDIS_TLS === 'true' || process.env.REDIS_HOST?.includes('upstash.io')) {
+    options.tls = {};
+  }
+
+  return new Redis(options);
+};
+
 const getRedisClient = () => {
   if (redisClient) return redisClient;
 
-  redisClient = new Redis({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
-    maxRetriesPerRequest: null, // Required by BullMQ
-    retryStrategy: (times) => {
-      if (times > 10) {
-        logger.error('Redis: max retries reached, giving up');
-        return null;
-      }
-      const delay = Math.min(times * 200, 5000);
-      logger.warn(`Redis: retrying connection in ${delay}ms (attempt ${times})`);
-      return delay;
-    },
-  });
+  redisClient = createRedisClient();
 
   redisClient.on('connect', () => {
     logger.info('Redis connected');
@@ -77,4 +104,4 @@ const cacheInvalidate = async (pattern) => {
   }
 };
 
-module.exports = { getRedisClient, cacheGet, cacheInvalidate };
+module.exports = { createRedisClient, getRedisClient, cacheGet, cacheInvalidate };

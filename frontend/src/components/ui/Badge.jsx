@@ -14,6 +14,10 @@ const Badge = ({ status = 'pending', children, className = '' }) => {
     failed: 'bg-rose-50 text-rose-700 border-rose-200',
     admin: 'bg-indigo-50 text-indigo-700 border-indigo-200',
     customer: 'bg-slate-50 text-slate-700 border-slate-200',
+    rating: 'bg-[#388e3c] text-white border-transparent font-bold',
+    discount: 'bg-emerald-50 text-[#388e3c] border-emerald-200 font-bold',
+    deal: 'bg-amber-500 text-white border-transparent font-bold',
+    assured: 'bg-blue-50 text-[#2874f0] border-blue-200 font-semibold',
   };
 
   const currentStyle = styles[normalized] || 'bg-slate-50 text-slate-700 border-slate-200';

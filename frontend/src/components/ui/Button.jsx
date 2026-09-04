@@ -19,6 +19,10 @@ const Button = ({
     outline: 'border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 focus:ring-slate-300',
     danger: 'bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500',
     ghost: 'bg-transparent hover:bg-slate-100 text-slate-700 focus:ring-slate-200',
+    'fk-primary': 'bg-[#2874f0] hover:bg-[#1a56db] text-white shadow-sm hover:shadow-md focus:ring-blue-400 font-semibold',
+    'fk-buy': 'bg-[#fb641b] hover:bg-[#e65100] text-white shadow-sm hover:shadow-md focus:ring-orange-400 font-bold uppercase tracking-wide',
+    'fk-cart': 'bg-[#ff9f00] hover:bg-[#f39700] text-white shadow-sm hover:shadow-md focus:ring-amber-400 font-bold uppercase tracking-wide',
+    'fk-outline': 'border border-[#2874f0] bg-white text-[#2874f0] hover:bg-blue-50 focus:ring-blue-300 font-semibold',
   };
 
   const sizes = {

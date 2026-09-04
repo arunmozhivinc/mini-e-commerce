@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   CreditCard,
   Truck,
@@ -9,6 +9,10 @@ import {
   MapPin,
   Phone,
   AlertCircle,
+  CheckCircle2,
+  Lock,
+  ChevronDown,
+  Sparkles,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +24,9 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { items, subtotal, clearCart } = useCart();
+
+  // Active accordion step (1: Login, 2: Address, 3: Summary, 4: Payment)
+  const [currentStep, setCurrentStep] = useState(2);
 
   const [address, setAddress] = useState({
     fullName: user?.name || '',
@@ -45,6 +52,8 @@ const CheckoutPage = () => {
   const tax = Math.round(subtotal * 0.08 * 100) / 100;
   const shipping = subtotal >= 50 ? 0 : 5.99;
   const grandTotal = Math.round((subtotal + tax + shipping) * 100) / 100;
+  const totalMRP = Math.round(subtotal * 1.35 * 100) / 100;
+  const totalSavings = Math.round((totalMRP - subtotal) * 100) / 100;
 
   const validate = () => {
     const errs = {};
@@ -57,12 +66,28 @@ const CheckoutPage = () => {
     return errs;
   };
 
+  const handleAddressSubmit = (e) => {
+    e.preventDefault();
+    const formErrors = validate();
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
+      return;
+    }
+    setErrors({});
+    setCurrentStep(3); // Proceed to Order Summary step
+  };
+
+  const handleProceedToPayment = () => {
+    setCurrentStep(4); // Proceed to Payment step
+  };
+
   const handleCreateOrderAndPay = async (e) => {
     e.preventDefault();
     setServerError('');
     const formErrors = validate();
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
+      setCurrentStep(2);
       return;
     }
 
@@ -118,205 +143,373 @@ const CheckoutPage = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-          Checkout & Payment
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Complete your delivery details and choose your payment method
-        </p>
+    <div className="min-h-screen bg-[#f1f3f6] pb-16">
+      {/* Checkout Minimal Top Header */}
+      <div className="bg-[#2874f0] text-white py-3 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-1 italic text-xl font-black">
+            Apex<span className="text-[#ffe500]">Cart</span>
+          </Link>
+          <div className="flex items-center gap-1.5 text-xs text-white/90">
+            <Lock size={14} className="text-[#ffe500]" /> 100% Safe & Secure Checkout
+          </div>
+        </div>
       </div>
 
-      {serverError && (
-        <div className="mb-8 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700 flex items-center gap-2">
-          <AlertCircle size={18} className="flex-shrink-0" />
-          <span>{serverError}</span>
-        </div>
-      )}
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-5">
+        {serverError && (
+          <div className="mb-5 p-4 rounded-md bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700 flex items-center gap-2">
+            <AlertCircle size={18} className="flex-shrink-0" />
+            <span>{serverError}</span>
+          </div>
+        )}
 
-      <form onSubmit={handleCreateOrderAndPay}>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left: Shipping Form */}
-          <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
-                  <MapPin size={18} />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Shipping Information</h3>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fillSampleAddress}
-                type="button"
-                className="text-xs"
-              >
-                Autofill Demo Address
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <Input
-                label="Full Recipient Name"
-                placeholder="Alex Johnson"
-                value={address.fullName}
-                onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
-                error={errors.fullName}
-                icon={User}
-              />
-
-              <Input
-                label="Street Address"
-                placeholder="123 Market St"
-                value={address.addressLine1}
-                onChange={(e) => setAddress({ ...address, addressLine1: e.target.value })}
-                error={errors.addressLine1}
-                icon={MapPin}
-              />
-
-              <Input
-                label="Apartment, suite, etc. (optional)"
-                placeholder="Apt 4B"
-                value={address.addressLine2}
-                onChange={(e) => setAddress({ ...address, addressLine2: e.target.value })}
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Input
-                  label="City"
-                  placeholder="New York"
-                  value={address.city}
-                  onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                  error={errors.city}
-                />
-                <Input
-                  label="State / Province"
-                  placeholder="NY"
-                  value={address.state}
-                  onChange={(e) => setAddress({ ...address, state: e.target.value })}
-                  error={errors.state}
-                />
-                <Input
-                  label="ZIP Code"
-                  placeholder="10001"
-                  value={address.zipCode}
-                  onChange={(e) => setAddress({ ...address, zipCode: e.target.value })}
-                  error={errors.zipCode}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input
-                  label="Country"
-                  value={address.country}
-                  onChange={(e) => setAddress({ ...address, country: e.target.value })}
-                />
-                <Input
-                  label="Phone Number"
-                  placeholder="+1 (555) 000-0000"
-                  value={address.phone}
-                  onChange={(e) => setAddress({ ...address, phone: e.target.value })}
-                  error={errors.phone}
-                  icon={Phone}
-                />
-              </div>
-            </div>
-
-            {/* Payment Method Selector Banner */}
-            <div className="pt-6 border-t border-slate-100">
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">
-                Payment Method
-              </h4>
-              <div className="p-4 rounded-2xl border-2 border-brand-500 bg-brand-50/40 flex items-center justify-between">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* LEFT: Accordion 4-Step Checkout Flow (Flipkart Style) */}
+          <div className="lg:col-span-8 space-y-3">
+            {/* STEP 1: LOGIN / ACCOUNT */}
+            <div className="bg-white rounded-md border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-3.5 bg-slate-50 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center">
-                    <CreditCard size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">
-                      Stripe Test Checkout (Hosted)
-                    </p>
-                    <p className="text-[11px] text-slate-500">
-                      Supports Visa, Mastercard, AMEX in Test Sandbox Mode
-                    </p>
-                  </div>
+                  <span className="w-6 h-6 rounded-full bg-[#2874f0] text-white font-bold text-xs flex items-center justify-center">
+                    1
+                  </span>
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700">
+                    Login / Account
+                  </h3>
+                  <CheckCircle2 size={16} className="text-[#388e3c]" />
                 </div>
-                <span className="text-xs font-bold text-brand-600 bg-brand-100/80 px-2.5 py-1 rounded-md">
-                  Sandbox Active
+                <span className="text-xs text-slate-500 font-medium">
+                  {user?.name} ({user?.email})
                 </span>
               </div>
             </div>
-          </div>
 
-          {/* Right: Order Review */}
-          <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 sticky top-24">
-            <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-4">
-              Review Order ({items.length} unique items)
-            </h3>
+            {/* STEP 2: DELIVERY ADDRESS */}
+            <div className="bg-white rounded-md border border-slate-200 shadow-sm overflow-hidden">
+              <div
+                onClick={() => setCurrentStep(2)}
+                className={`p-3.5 flex items-center justify-between cursor-pointer transition-colors ${
+                  currentStep === 2 ? 'bg-[#2874f0] text-white' : 'bg-slate-50 text-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center ${
+                      currentStep === 2
+                        ? 'bg-white text-[#2874f0]'
+                        : 'bg-[#2874f0] text-white'
+                    }`}
+                  >
+                    2
+                  </span>
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider">
+                    Delivery Address
+                  </h3>
+                  {currentStep > 2 && <CheckCircle2 size={16} className="text-[#388e3c]" />}
+                </div>
 
-            {/* Mini items list */}
-            <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 pr-1">
-              {items.map((item) => (
-                <div key={item._id} className="py-3 flex items-center gap-3">
-                  <img
-                    src={item.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80'}
-                    alt=""
-                    className="w-12 h-12 rounded-xl object-cover border border-slate-100 flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-slate-900 truncate">{item.name}</p>
-                    <p className="text-[11px] text-slate-500">
-                      Qty: {item.quantity} × ${item.price?.toFixed(2)}
+                {currentStep !== 2 && address.addressLine1 && (
+                  <span className="text-xs text-slate-500 font-medium truncate max-w-xs">
+                    {address.fullName}, {address.city}
+                  </span>
+                )}
+              </div>
+
+              {currentStep === 2 && (
+                <div className="p-4 sm:p-6 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <p className="text-xs text-slate-500">
+                      Enter the address where you would like your order delivered.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={fillSampleAddress}
+                      className="px-3 py-1 rounded border border-[#2874f0] text-[#2874f0] hover:bg-blue-50 text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      Autofill Demo Address
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleAddressSubmit} className="space-y-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Input
+                        label="Full Recipient Name"
+                        placeholder="Alex Johnson"
+                        value={address.fullName}
+                        onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
+                        error={errors.fullName}
+                        icon={User}
+                      />
+                      <Input
+                        label="10-Digit Mobile Number"
+                        placeholder="+1 (555) 000-0000"
+                        value={address.phone}
+                        onChange={(e) => setAddress({ ...address, phone: e.target.value })}
+                        error={errors.phone}
+                        icon={Phone}
+                      />
+                    </div>
+
+                    <Input
+                      label="Street Address / Building Name"
+                      placeholder="742 Evergreen Terrace"
+                      value={address.addressLine1}
+                      onChange={(e) => setAddress({ ...address, addressLine1: e.target.value })}
+                      error={errors.addressLine1}
+                      icon={MapPin}
+                    />
+
+                    <Input
+                      label="Apartment, Suite, Landmark (Optional)"
+                      placeholder="Apt 4B, Near Central Park"
+                      value={address.addressLine2}
+                      onChange={(e) => setAddress({ ...address, addressLine2: e.target.value })}
+                    />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <Input
+                        label="City"
+                        placeholder="Springfield"
+                        value={address.city}
+                        onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                        error={errors.city}
+                      />
+                      <Input
+                        label="State / Province"
+                        placeholder="IL"
+                        value={address.state}
+                        onChange={(e) => setAddress({ ...address, state: e.target.value })}
+                        error={errors.state}
+                      />
+                      <Input
+                        label="Pincode / Postal Code"
+                        placeholder="62704"
+                        value={address.zipCode}
+                        onChange={(e) => setAddress({ ...address, zipCode: e.target.value })}
+                        error={errors.zipCode}
+                      />
+                    </div>
+
+                    <div className="pt-3">
+                      <button
+                        type="submit"
+                        className="px-8 py-3 rounded bg-[#fb641b] hover:bg-[#e65100] text-white text-xs font-bold uppercase tracking-wider shadow cursor-pointer transition-all active:scale-95"
+                      >
+                        Deliver Here
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+
+            {/* STEP 3: ORDER SUMMARY */}
+            <div className="bg-white rounded-md border border-slate-200 shadow-sm overflow-hidden">
+              <div
+                onClick={() => {
+                  if (currentStep > 2) setCurrentStep(3);
+                }}
+                className={`p-3.5 flex items-center justify-between cursor-pointer transition-colors ${
+                  currentStep === 3 ? 'bg-[#2874f0] text-white' : 'bg-slate-50 text-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center ${
+                      currentStep === 3
+                        ? 'bg-white text-[#2874f0]'
+                        : 'bg-[#2874f0] text-white'
+                    }`}
+                  >
+                    3
+                  </span>
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider">
+                    Order Summary
+                  </h3>
+                  {currentStep > 3 && <CheckCircle2 size={16} className="text-[#388e3c]" />}
+                </div>
+
+                <span className="text-xs font-semibold">
+                  {items.length} item{items.length === 1 ? '' : 's'}
+                </span>
+              </div>
+
+              {currentStep === 3 && (
+                <div className="p-4 sm:p-6 space-y-4">
+                  <div className="divide-y divide-slate-100">
+                    {items.map((item) => (
+                      <div key={item._id} className="py-3 flex items-center gap-4">
+                        <img
+                          src={
+                            item.image ||
+                            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80'
+                          }
+                          alt=""
+                          className="w-16 h-16 rounded object-contain border border-slate-100 p-1 flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-slate-900 truncate">
+                            {item.name}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            Quantity: {item.quantity} • Free delivery eligible
+                          </p>
+                          <p className="text-xs font-black text-slate-900 mt-1">
+                            ${(item.price * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <p className="text-xs text-slate-500">
+                      Order confirmation email will be sent to <strong>{user?.email}</strong>.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleProceedToPayment}
+                      className="px-8 py-3 rounded bg-[#fb641b] hover:bg-[#e65100] text-white text-xs font-bold uppercase tracking-wider shadow cursor-pointer transition-all active:scale-95"
+                    >
+                      Continue to Payment
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* STEP 4: PAYMENT OPTIONS */}
+            <div className="bg-white rounded-md border border-slate-200 shadow-sm overflow-hidden">
+              <div
+                className={`p-3.5 flex items-center justify-between ${
+                  currentStep === 4 ? 'bg-[#2874f0] text-white' : 'bg-slate-50 text-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center ${
+                      currentStep === 4
+                        ? 'bg-white text-[#2874f0]'
+                        : 'bg-slate-300 text-slate-600'
+                    }`}
+                  >
+                    4
+                  </span>
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider">
+                    Payment Options
+                  </h3>
+                </div>
+              </div>
+
+              {currentStep === 4 && (
+                <div className="p-4 sm:p-6 space-y-5">
+                  <div className="p-4 rounded border-2 border-[#2874f0] bg-blue-50/50 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded bg-[#2874f0] text-white flex items-center justify-center">
+                        <CreditCard size={22} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">
+                          Stripe Test Sandbox Payment
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          Visa, Mastercard, AMEX & Net Banking in Sandbox Mode
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#2874f0] bg-blue-100 px-2 py-0.5 rounded">
+                      Verified Secure
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-slate-600">
+                    <p className="flex items-center gap-1.5">
+                      <ShieldCheck size={16} className="text-[#388e3c]" />
+                      256-Bit SSL Encrypted Payment with Stripe Webhooks
+                    </p>
+                    <p className="flex items-center gap-1.5">
+                      <Sparkles size={16} className="text-[#2874f0]" />
+                      Real-time BullMQ background order processing
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-slate-900">
-                    ${(item.price * item.quantity).toFixed(2)}
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={handleCreateOrderAndPay}
+                      className="w-full sm:w-auto px-10 py-3.5 rounded bg-[#fb641b] hover:bg-[#e65100] text-white text-sm font-bold uppercase tracking-wider shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {submitting ? 'Initiating Payment...' : `Pay $${grandTotal.toFixed(2)} with Stripe`}
+                      <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: Price Details Summary Sidebar */}
+          <div className="lg:col-span-4 sticky top-20 space-y-3">
+            <div className="bg-white rounded-md border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-3.5 bg-slate-50/70 border-b border-slate-100">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Price Details
+                </h3>
+              </div>
+
+              <div className="p-4 space-y-3 text-xs text-slate-700">
+                <div className="flex justify-between items-center">
+                  <span>Price ({items.length} item{items.length === 1 ? '' : 's'})</span>
+                  <span className="font-bold text-slate-900">${totalMRP.toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between items-center text-[#388e3c]">
+                  <span>Discount</span>
+                  <span className="font-bold">-${totalSavings.toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span>Estimated Tax (8%)</span>
+                  <span className="font-bold text-slate-900">${tax.toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span>Delivery Charges</span>
+                  <span className="font-bold">
+                    {shipping === 0 ? (
+                      <span className="text-[#388e3c]">FREE</span>
+                    ) : (
+                      `$${shipping.toFixed(2)}`
+                    )}
                   </span>
                 </div>
-              ))}
-            </div>
 
-            {/* Calculations */}
-            <div className="space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span className="font-semibold text-slate-900">${subtotal.toFixed(2)}</span>
+                <div className="border-t border-dashed border-slate-200 pt-3 flex justify-between items-baseline text-sm">
+                  <span className="font-black text-slate-900">Total Payable</span>
+                  <span className="text-lg font-black text-slate-900">
+                    ${grandTotal.toFixed(2)}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>Sales Tax (8%)</span>
-                <span className="font-semibold text-slate-900">${tax.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Delivery Shipping</span>
-                <span className="font-semibold text-slate-900">
-                  {shipping === 0 ? <span className="text-emerald-600 font-bold">FREE</span> : `$${shipping.toFixed(2)}`}
-                </span>
-              </div>
-              <div className="pt-3 border-t border-slate-200 flex justify-between items-baseline">
-                <span className="text-sm font-bold text-slate-900">Total Due</span>
-                <span className="text-2xl font-black text-slate-900">${grandTotal.toFixed(2)}</span>
+
+              <div className="p-3 bg-emerald-50 border-t border-emerald-100 text-center">
+                <p className="text-xs font-bold text-[#388e3c]">
+                  Your Total Savings on this order is ${totalSavings.toFixed(2)}!
+                </p>
               </div>
             </div>
 
-            <Button
-              type="submit"
-              size="lg"
-              variant="primary"
-              loading={submitting}
-              className="w-full py-4 text-sm"
-            >
-              Pay ${grandTotal.toFixed(2)} with Stripe <ArrowRight size={16} className="ml-2" />
-            </Button>
-
-            <div className="pt-2 flex items-center justify-center gap-2 text-[11px] text-slate-400">
-              <ShieldCheck size={14} className="text-emerald-500" />
-              <span>Stripe Webhook signature verified backend processing</span>
+            <div className="flex items-center gap-2.5 p-3 rounded-md bg-white border border-slate-200 text-xs text-slate-500">
+              <ShieldCheck size={26} className="text-[#2874f0] flex-shrink-0" />
+              <p className="text-[11px] leading-snug">
+                Safe and Secure Payments. Easy returns. 100% Authentic products.
+              </p>
             </div>
           </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 };
