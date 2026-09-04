@@ -47,6 +47,7 @@ const AppContent = () => {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/cart" element={<CartPage />} />
 
+
           {/* Customer Account, Checkout & Orders */}
           <Route path="/account" element={<AccountPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
