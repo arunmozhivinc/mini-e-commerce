@@ -1,11 +1,7 @@
 const { Queue } = require('bullmq');
-const Redis = require('ioredis');
+const { createRedisClient } = require('shared/src/index');
 
-const connection = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT, 10) || 6379,
-  maxRetriesPerRequest: null,
-});
+const connection = createRedisClient();
 
 const orderNotificationQueue = new Queue('order-notifications', { connection });
 

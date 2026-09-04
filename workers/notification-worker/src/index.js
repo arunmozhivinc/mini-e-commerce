@@ -5,7 +5,7 @@ const { Worker } = require('bullmq');
 const Redis = require('ioredis');
 const mongoose = require('mongoose');
 const webpush = require('web-push');
-const { connectDB, logger, cacheInvalidate } = require('shared/src/index');
+const { connectDB, logger, cacheInvalidate, createRedisClient } = require('shared/src/index');
 
 // Setup Web Push
 const publicKey = process.env.VAPID_PUBLIC_KEY;
@@ -44,11 +44,7 @@ const Notification = mongoose.models.Notification || mongoose.model('Notificatio
 const Subscription = mongoose.models.Subscription || mongoose.model('Subscription', subscriptionSchema);
 
 // Redis connection for BullMQ
-const redisConnection = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT, 10) || 6379,
-  maxRetriesPerRequest: null,
-});
+const redisConnection = createRedisClient();
 
 const getNotificationContent = (jobData) => {
   const { type, orderNumber, total, status } = jobData;

@@ -9,12 +9,25 @@ const { setupProxies } = require('./config/proxy');
 const { generalLimiter, authLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
-const PORT = process.env.API_GATEWAY_PORT || 5000;
+const PORT = process.env.PORT || process.env.API_GATEWAY_PORT || 5000;
 
-// CORS — allow frontend origin
+// CORS — allow frontend origin & Vercel deployments
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      const frontendUrl = process.env.FRONTEND_URL;
+      if (
+        !frontendUrl ||
+        origin === frontendUrl ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost')
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissive for demo
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
